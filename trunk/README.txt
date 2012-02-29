@@ -13,7 +13,7 @@ to use django-serene simply just do:
 ====================
        USAGE
 ====================
-1. In settings.py, add 'serene', in INSTALLED_APPS
+1. In settings.py, add 'djangorestframework' and 'serene' in INSTALLED_APPS
 2. The use of serene is very similar to djagnorestframework :)
 
 
