@@ -1,3 +1,5 @@
+coverage
 django
 djangorestframework
+django-nose
 yolk
