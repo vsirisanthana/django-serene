@@ -1,3 +1,4 @@
+from django.utils.http import http_date
 from djangorestframework import status
 from djangorestframework.mixins import (
     ModelMixin as DrfModelMixin,
@@ -7,13 +8,14 @@ from djangorestframework.mixins import (
 )
 from djangorestframework.response import ErrorResponse, Response
 from urlobject import URLObject
+import time
 
 
 class ReadModelMixin(DrfReadModelMixin):
 
     def get(self, request, *args, **kwargs):
         instance = super(ReadModelMixin, self).get(request, *args, **kwargs)
-        return Response(content=instance, headers={'Last-Modified':instance.last_modified})
+        return Response(content=instance, headers={'Last-Modified': http_date(time.mktime(instance.last_modified.timetuple()))})
 
 
 class UpdateModelMixin(DrfModelMixin):

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.test.client import RequestFactory
 from django.utils import simplejson as json
+from django.utils.http import parse_http_date
 from django.utils.unittest.case import TestCase
 from djangorestframework.response import ErrorResponse
 from djangorestframework.tests.testcases import SettingsTestCase
@@ -8,6 +9,8 @@ from djangorestframework.views import View
 from serene.mixins import ReadModelMixin, UpdateModelMixin, UpdateOrCreateModelMixin, CreateModelMixin, PaginatorMixin
 from serene.resources import ModelResource
 from serene.tests.models import DummyModel
+
+import time
 
 class TestMixinsBase(SettingsTestCase):
     def setUp(self):
@@ -31,7 +34,10 @@ class TestReadMixin(TestMixinsBase):
         response = mixin.get(request, dummy.id)
         self.assertEquals(dummy.name, response.cleaned_content.name)
         self.assertTrue(response.headers.has_key('Last-Modified'))
-        self.assertEqual(response.headers['Last-Modified'], dummy.last_modified)
+        last_modified = response.headers['Last-Modified']
+        # no error should occur, meaning we have the right format
+        last_modified_datetime = parse_http_date(last_modified)
+        self.assertEqual(last_modified_datetime, time.mktime(dummy.last_modified.timetuple()))
 
 class TestUpdateModelMixin(TestMixinsBase):
 
