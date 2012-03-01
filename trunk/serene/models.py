@@ -9,4 +9,4 @@ class Model(Model):
 
     @permalink
     def get_absolute_url(self):
-        raise NotImplementedError
+        raise NotImplementedError("Please implement get_absolute_url() for each model.")

@@ -8,6 +8,10 @@ class ModelResource(DrfModelResource):
     include = ('links',)
     related_serializer = RelatedSerializer
 
+    def filter_response(self, obj):
+        self._links = {}
+        return super(ModelResource, self).filter_response(obj)
+
     def links(self, instance):
         self._links['self'] = {
             'href': self.url(instance),
@@ -15,9 +19,8 @@ class ModelResource(DrfModelResource):
             }
         return self._links
 
-    def filter_response(self, obj):
-        self._links = {}
-        return super(ModelResource, self).filter_response(obj)
+    def url(self, instance):
+        return instance.get_absolute_url()
 
     def serialize_val(self, key, obj):
         serialized_val = super(ModelResource, self).serialize_val(key, obj)

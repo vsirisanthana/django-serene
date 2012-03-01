@@ -122,8 +122,8 @@ INSTALLED_APPS = (
 
     'django_nose',
     'djangorestframework',
-    'serene',
 
+    'serene',
 )
 
 # A sample logging configuration. The only tangible logging
