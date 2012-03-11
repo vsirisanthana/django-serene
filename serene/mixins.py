@@ -1,3 +1,5 @@
+import time
+from datetime import datetime
 from django.utils.http import http_date
 from djangorestframework import status
 from djangorestframework.mixins import (
@@ -8,14 +10,16 @@ from djangorestframework.mixins import (
 )
 from djangorestframework.response import ErrorResponse, Response
 from urlobject import URLObject
-import time
 
 
 class ReadModelMixin(DrfReadModelMixin):
 
     def get(self, request, *args, **kwargs):
         instance = super(ReadModelMixin, self).get(request, *args, **kwargs)
-        return Response(content=instance, headers={'Last-Modified': http_date(time.mktime(instance.last_modified.timetuple()))})
+        if hasattr(instance, 'last_modified'):
+            return Response(content=instance, headers={'Last-Modified': http_date(time.mktime(instance.last_modified.timetuple()))})
+        else:
+            return Response(content=instance, headers={'Last-Modified': http_date(time.mktime(datetime.now().timetuple()))})
 
 
 class UpdateModelMixin(DrfModelMixin):
@@ -56,9 +60,8 @@ class CreateModelMixin(DrfCreateModelMixin):
 
     def post(self, request, *args, **kwargs):
         response = super(CreateModelMixin, self).post(request, *args, **kwargs)
-        response.headers.update({
-            'Content-Location': self.resource(self).url(response.raw_content)
-        })
+        if response.headers.has_key('Location'):
+            response.headers['Content-Location'] = response.headers['Location']
         return response
 
 
