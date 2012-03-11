@@ -13,10 +13,13 @@ class ModelResource(DrfModelResource):
         return super(ModelResource, self).filter_response(obj)
 
     def links(self, instance):
-        self._links['self'] = {
-            'href': self.url(instance),
-            'rel': 'self',
+        try:
+            self._links['self'] = {
+                'href': self.url(instance),
+                'rel': 'self',
             }
+        except AttributeError:
+            pass
         return self._links
 
     def url(self, instance):
