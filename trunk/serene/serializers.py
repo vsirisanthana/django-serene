@@ -1,5 +1,16 @@
+import datetime
+
 from django.db import models
-from djangorestframework.serializer import Serializer
+from djangorestframework.serializer import Serializer as DrfSerializer
+
+
+class Serializer(DrfSerializer):
+
+    def serialize(self, obj):
+        if isinstance(obj, (datetime.datetime, datetime.date, datetime.time,)):
+            return obj.isoformat()
+        else:
+            return super(Serializer, self).serialize(obj)
 
 
 class RelatedSerializer(Serializer):
