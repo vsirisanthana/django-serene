@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "django-serene",
-    version = "0.0.3",
+    version = "0.0.4",
     author = "The Sirisanthana Team",
     author_email = "vsirisanthana@gmail.com",
     description = ("An enhanced djangorestframework. Serene is a RESTful framework with a touch of sirisanthana"),

@@ -14,6 +14,25 @@ class TestObjectToData(TestCase):
     Tests for the Serializer class.
     """
 
+    class GMT1(datetime.tzinfo):
+        """Simeple tzinfo class for testing"""
+        def __init__(self):                         # DST starts last Sunday in March
+            year = datetime.date.today().year
+            d = datetime.datetime(year, 4, 1)    # ends last Sunday in October
+            self.dston = d - datetime.timedelta(days=d.weekday() + 1)
+            d = datetime.datetime(year, 11, 1)
+            self.dstoff = d - datetime.timedelta(days=d.weekday() + 1)
+        def utcoffset(self, dt):
+            return datetime.timedelta(hours=1) + self.dst(dt)
+        def dst(self, dt):
+            if self.dston <=  dt.replace(tzinfo=None) < self.dstoff:
+                return datetime.timedelta(hours=1)
+            else:
+                return datetime.timedelta(0)
+        def tzname(self,dt):
+            return "GMT +1"
+
+
     def setUp(self):
         self.serializer = Serializer()
         self.serialize = self.serializer.serialize
@@ -42,12 +61,14 @@ class TestObjectToData(TestCase):
 
     def test_datetime(self):
         """datetime objects need to be converted to ISO format."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.now()   # naive datetime i.e. no tzinfo
+        self.assertEquals(self.serialize(now), now.isoformat())
+        now = datetime.datetime.now(tz=self.GMT1()) # aware datetime i.e. with tzinfo
         self.assertEquals(self.serialize(now), now.isoformat())
 
     def test_time(self):
         """time objects need to be converted to ISO format."""
-        time = datetime.datetime.now().time()
+        time = datetime.datetime.now().time()   # naive time i.e. no tzinfo
         self.assertEquals(self.serialize(time), time.isoformat())
 
     def test_dict_method_name_collision(self):
