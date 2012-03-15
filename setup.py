@@ -12,14 +12,14 @@ setup(
     author_email = "vsirisanthana@gmail.com",
     description = ("An enhanced djangorestframework. Serene is a RESTful framework with a touch of sirisanthana"),
     long_description = read('README.txt'),
-    license = "Boost Software License - Version 1.0 - August 17th, 2003",
+    license = "GPL-3.0",
     keywords = "RESTful django djangorestframework",
     classifiers = [
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "License :: OSI Approved :: Boost Software License - Version 1.0 - August 17th, 2003",
+        "License :: OSI Approved :: GNU General Public License (GPL)"
         ],
     packages = ['serene', 'serene.tests'],
     install_requires = ['djangorestframework'],
