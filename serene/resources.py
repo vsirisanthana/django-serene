@@ -8,31 +8,31 @@ class ModelResource(DrfModelResource):
     include = ('links',)
     related_serializer = RelatedSerializer
 
-    def filter_response(self, obj):
-        self._links = {}
-        return super(ModelResource, self).filter_response(obj)
-
     def links(self, instance):
+        links = {}
+        # Add self link
         try:
-            self._links['self'] = {
+            links['self'] = {
                 'href': self.url(instance),
                 'rel': 'self',
+                'title': unicode(instance),
             }
-        except AttributeError:
+        except (AttributeError, NotImplementedError):
             pass
-        return self._links
+        # Add related instances' links
+        for field in instance._meta.fields:
+            if isinstance(field, models.ForeignKey):
+                name = field.name
+                obj = getattr(instance, name)
+                try:
+                    links[name] = {
+                        'href': obj.get_absolute_url(),
+                        'rel': name,
+                        'title': unicode(obj),
+                    }
+                except (AttributeError, NotImplementedError):
+                    pass
+        return links
 
     def url(self, instance):
         return instance.get_absolute_url()
-
-    def serialize_val(self, key, obj):
-        serialized_val = super(ModelResource, self).serialize_val(key, obj)
-        if isinstance(obj, models.Model):
-            self._links[key] = {
-                'href': serialized_val['links']['self']['href'],
-                'rel': key,
-                'title': serialized_val['title'],
-            }
-            return serialized_val
-        else:
-            return serialized_val

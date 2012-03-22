@@ -1,16 +1,39 @@
 import datetime
 
 from django.db import models
-from djangorestframework.serializer import Serializer as DrfSerializer
+from djangorestframework.serializer import Serializer, _SkipField
 
 
-class Serializer(DrfSerializer):
+# Inject/Override methods in djangorestframework Serializer.
+# Necessary because OnTheFlySerializer is based on djangorestframework Serializer.
+def links(self, instance):
+    try:
+        return {
+            'self': {
+                'href': instance.get_absolute_url(),
+                'rel': 'self',
+                'title': unicode(instance),
+            }
+        }
+    except (AttributeError, NotImplementedError):
+        raise _SkipField
+Serializer.links = links
 
-    def serialize(self, obj):
-        if isinstance(obj, (datetime.datetime, datetime.date, datetime.time,)):
-            return obj.isoformat()
-        else:
-            return super(Serializer, self).serialize(obj)
+def title(self, instance):
+    if isinstance(instance, models.Model):
+        return unicode(instance)
+    else:
+        return instance['title']
+Serializer.title = title
+
+Serializer._serialize = Serializer.serialize
+def serialize(self, obj):
+    if isinstance(obj, (datetime.datetime, datetime.date, datetime.time,)):
+        return obj.isoformat()
+    else:
+        return self._serialize(obj)
+Serializer.serialize = serialize
+# End djangorestframework method injection/override
 
 
 class RelatedSerializer(Serializer):
@@ -27,6 +50,7 @@ class RelatedSerializer(Serializer):
                     'self': {
                         'href': instance.get_absolute_url(),
                         'rel': 'self',
+                        'title': unicode(instance),
                     }
                 },
             }
