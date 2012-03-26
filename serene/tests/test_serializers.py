@@ -6,7 +6,7 @@ from django.db import models
 from django.test import TestCase
 from django.utils.translation import ugettext_lazy
 
-from serene.serializers import Serializer
+from serene.serializers import RelatedSerializer, Serializer
 
 
 class TestObjectToData(TestCase):
@@ -170,3 +170,154 @@ class TestFieldNesting(TestCase):
         self.m2.overridden = True
         self.assertEqual(SerializerM2().serialize_model(self.m2),
                 {'overridden': True})
+
+
+class TestExtraFields(TestCase):
+    """
+    Test extra fields (i.e. links, title) in the Serializer class
+    """
+
+    def setUp(self):
+        self.serializer = Serializer()
+        self.serialize = self.serializer.serialize
+
+        class M1(models.Model):
+            field1 = models.CharField(max_length=256)
+            field2 = models.CharField(max_length=256)
+
+            def __unicode__(self):
+                return '%s %s' % (self.field1, self.field2)
+
+            def get_absolute_url(self):
+                return '/m1s/%s' % self.id
+
+        self.M1 = M1
+        self.m1 = M1(field1='foo', field2='bar')
+
+    def test_links(self):
+        """
+        Test 'links' field
+        """
+        class SerializerM1(Serializer):
+            fields = ('field1', 'links')
+
+        self.assertEqual(SerializerM1().serialize(self.m1), {
+            'field1': u'foo',
+            'links': {
+                'self': {
+                    'href': u'/m1s/%s' % self.m1.id,
+                    'rel': u'self',
+                    'title': u'foo bar'
+                }
+            }
+        })
+
+    def test_skip_links(self):
+        """
+        Test 'links' field should be skipped if 'get_absolute_url' is not defined in the model
+        """
+        self._orig_get_absolute_url = self.M1.get_absolute_url
+        del self.M1.get_absolute_url
+
+        class SerializerM1(Serializer):
+            fields = ('field1', 'links')
+
+        self.assertEqual(SerializerM1().serialize(self.m1), {'field1': u'foo'})
+
+        self.M1.get_absolute_url = self._orig_get_absolute_url
+
+    def test_title(self):
+        """
+        Test 'links' field
+        """
+        class SerializerM1(Serializer):
+            fields = ('field1', 'title')
+
+        self.assertEqual(SerializerM1().serialize(self.m1), {'field1': u'foo', 'title': u'foo bar'})
+
+
+class TestRelatedSerializer(TestCase):
+    """
+    Test the default RelatedSerializer class
+    """
+    def setUp(self):
+        self.serializer = Serializer()
+        self.serialize = self.serializer.serialize
+
+        class M1(models.Model):
+            field1 = models.CharField(max_length=256)
+            field2 = models.CharField(max_length=256)
+
+            def __unicode__(self):
+                return '%s %s' % (self.field1, self.field2)
+
+            def get_absolute_url(self):
+                return '/m1s/%s' % self.id
+
+        class M2(models.Model):
+            field = models.OneToOneField(M1)
+
+        class M3(models.Model):
+            field = models.ForeignKey(M1)
+
+        self.m1 = M1(id=1, field1='foo', field2='bar')
+        self.m2 = M2(id=2, field=self.m1)
+        self.m3 = M3(id=3, field=self.m1)
+
+    def test_serialize_related_model(self):
+        """
+        Test serialize related model
+        """
+        class SerializerM2(Serializer):
+            related_serializer = RelatedSerializer
+
+        class SerializerM3(Serializer):
+            related_serializer = RelatedSerializer
+
+        self.assertEqual(SerializerM2().serialize(self.m2), {
+            'id': self.m2.id,
+            'field': {
+                'id': self.m1.id,
+                'title': u'foo bar',
+                'links': {
+                    'self': {
+                        'href': u'/m1s/%s' % self.m1.id,
+                        'rel': u'self',
+                        'title': u'foo bar'
+                    }
+                }
+            }
+        })
+
+        self.assertEqual(SerializerM3().serialize(self.m3), {
+            'id': self.m3.id,
+            'field': {
+                'id': self.m1.id,
+                'title': u'foo bar',
+                'links': {
+                    'self': {
+                        'href': u'/m1s/%s' % self.m1.id,
+                        'rel': u'self',
+                        'title': u'foo bar'
+                    }
+                }
+            }
+        })
+
+    def test_serialize_related_dict(self):
+        """
+        Test serialize related dict
+        """
+        class SerializerM1(Serializer):
+            fields = ('links',)
+            related_serializer = RelatedSerializer
+
+        self.assertEqual(SerializerM1().serialize(self.m1), {
+            'links': {
+                'self': {
+                    'href': u'/m1s/%s' % self.m1.id,
+                    'rel': u'self',
+                    'title': u'foo bar'
+                }
+            }
+        })
