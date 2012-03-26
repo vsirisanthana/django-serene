@@ -8,7 +8,7 @@ all the interesting & useful info goes here!!!
     INSTALLATION
 ====================
 to use django-serene simply just do:
->> pip install https://serenesiri.googlecode.com/svn/trunk
+>> pip install django-serene
 
 ====================
        USAGE
