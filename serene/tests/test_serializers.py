@@ -2,10 +2,10 @@
 import datetime
 import decimal
 
-from django.db import models
 from django.test import TestCase
 from django.utils.translation import ugettext_lazy
 
+from serene import models
 from serene.serializers import RelatedSerializer, Serializer
 
 
@@ -34,6 +34,7 @@ class TestObjectToData(TestCase):
 
 
     def setUp(self):
+        super(TestObjectToData, self).setUp()
         self.serializer = Serializer()
         self.serialize = self.serializer.serialize
 
@@ -86,6 +87,7 @@ class TestFieldNesting(TestCase):
     Test nesting the fields in the Serializer class
     """
     def setUp(self):
+        super(TestFieldNesting, self).setUp()
         self.serializer = Serializer()
         self.serialize = self.serializer.serialize
 
@@ -178,6 +180,7 @@ class TestExtraFields(TestCase):
     """
 
     def setUp(self):
+        super(TestExtraFields, self).setUp()
         self.serializer = Serializer()
         self.serialize = self.serializer.serialize
 
@@ -188,9 +191,6 @@ class TestExtraFields(TestCase):
             def __unicode__(self):
                 return '%s %s' % (self.field1, self.field2)
 
-            def get_absolute_url(self):
-                return '/m1s/%s' % self.id
-
         self.M1 = M1
         self.m1 = M1(field1='foo', field2='bar')
 
@@ -198,6 +198,8 @@ class TestExtraFields(TestCase):
         """
         Test 'links' field
         """
+        self.M1.get_absolute_url = lambda self: '/m1s/%s' % self.id
+
         class SerializerM1(Serializer):
             fields = ('field1', 'links')
 
@@ -212,19 +214,16 @@ class TestExtraFields(TestCase):
             }
         })
 
+        del self.M1.get_absolute_url
+
     def test_skip_links(self):
         """
         Test 'links' field should be skipped if 'get_absolute_url' is not defined in the model
         """
-        self._orig_get_absolute_url = self.M1.get_absolute_url
-        del self.M1.get_absolute_url
-
         class SerializerM1(Serializer):
             fields = ('field1', 'links')
 
         self.assertEqual(SerializerM1().serialize(self.m1), {'field1': u'foo'})
-
-        self.M1.get_absolute_url = self._orig_get_absolute_url
 
     def test_title(self):
         """
@@ -241,10 +240,11 @@ class TestRelatedSerializer(TestCase):
     Test the default RelatedSerializer class
     """
     def setUp(self):
+        super(TestRelatedSerializer, self).setUp()
         self.serializer = Serializer()
         self.serialize = self.serializer.serialize
 
-        class M1(models.Model):
+        class M4(models.Model):
             field1 = models.CharField(max_length=256)
             field2 = models.CharField(max_length=256)
 
@@ -254,15 +254,15 @@ class TestRelatedSerializer(TestCase):
             def get_absolute_url(self):
                 return '/m1s/%s' % self.id
 
-        class M2(models.Model):
-            field = models.OneToOneField(M1)
+        class M5(models.Model):
+            field = models.OneToOneField(M4)
 
-        class M3(models.Model):
-            field = models.ForeignKey(M1)
+        class M6(models.Model):
+            field = models.ForeignKey(M4)
 
-        self.m1 = M1(id=1, field1='foo', field2='bar')
-        self.m2 = M2(id=2, field=self.m1)
-        self.m3 = M3(id=3, field=self.m1)
+        self.m1 = M4(id=1, field1='foo', field2='bar')
+        self.m2 = M5(id=2, field=self.m1)
+        self.m3 = M6(id=3, field=self.m1)
 
     def test_serialize_related_model(self):
         """
@@ -286,7 +286,8 @@ class TestRelatedSerializer(TestCase):
                         'title': u'foo bar'
                     }
                 }
-            }
+            },
+            'last_modified': None,
         })
 
         self.assertEqual(SerializerM3().serialize(self.m3), {
@@ -301,7 +302,8 @@ class TestRelatedSerializer(TestCase):
                         'title': u'foo bar'
                     }
                 }
-            }
+            },
+            'last_modified': None,
         })
 
     def test_serialize_related_dict(self):
