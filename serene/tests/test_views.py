@@ -1,9 +1,19 @@
-from django.db import models
-from django.test import TestCase
+from django.conf import settings
+from django.conf.urls.defaults import patterns, include, url
 from django.utils import simplejson
+from djangorestframework.tests.testcases import SettingsTestCase
 
-from test_serenesiri.models import Brand, Product
-from test_serenesiri.resources import ProductResource
+from serene.tests.models import Brand, Product
+from serene.tests.resources import BrandResource, ProductResource
+from serene.views import CreatableInstanceModelView, PaginatedListOrCreateModelView
+
+
+urlpatterns = patterns('',
+    url(r'^brands/?$', PaginatedListOrCreateModelView.as_view(resource=BrandResource), name='brand_list_or_create'),
+    url(r'^brands/(?P<id>\d+)/?$', CreatableInstanceModelView.as_view(resource=BrandResource), name='brand_instance'),
+    url(r'^products/?$', PaginatedListOrCreateModelView.as_view(resource=ProductResource), name='product_list_or_create'),
+    url(r'^products/(?P<id>\d+)/?$', CreatableInstanceModelView.as_view(resource=ProductResource), name='product_instance'),
+)
 
 
 #class TestInstanceModelView(TestCase):
@@ -18,7 +28,7 @@ from test_serenesiri.resources import ProductResource
 #    def test_instance_model_view_without_get_absolute_url(self):
 #        self.nike = Brand.objects.create(name='Nike')
 #
-#        r = self.client.get('/test_serenesiri/brands/%s' % self.nike.id)
+#        r = self.client.get('/brands/%s' % self.nike.id)
 #
 #        self.assertEqual(r.status_code, 200)
 #        self.assertEqual(simplejson.loads(r.content), {
@@ -36,7 +46,7 @@ from test_serenesiri.resources import ProductResource
 #
 #        self.nike = Brand.objects.create(name='Nike')
 #
-#        r = self.client.get('/test_serenesiri/brands/%s' % self.nike.id)
+#        r = self.client.get('/brands/%s' % self.nike.id)
 #
 #        self.assertEqual(r.status_code, 200)
 #        self.assertEqual(simplejson.loads(r.content), {
@@ -44,7 +54,7 @@ from test_serenesiri.resources import ProductResource
 #            'name': 'Nike',
 #            'links': {
 #                'self': {
-#                    'href': 'http://testserver/test_serenesiri/brands/%s' % self.nike.id,
+#                    'href': 'http://testserver/brands/%s' % self.nike.id,
 #                    'rel': 'self',
 #                    'title': 'Nike',
 #                }
@@ -52,10 +62,17 @@ from test_serenesiri.resources import ProductResource
 #        })
 
 
-class TestResourceFields(TestCase):
+class TestResourceFields(SettingsTestCase):
+    urls = 'serene.tests.test_views'
 
     def setUp(self):
         super(TestResourceFields, self).setUp()
+
+
+        installed_apps = tuple(settings.INSTALLED_APPS) + ('serene.tests',)
+        self.settings_manager.set(INSTALLED_APPS=installed_apps)
+
+
         self._orig_maxDiff = self.maxDiff
         self.maxDiff = None
         self._orig_ProductResource_fields = ProductResource.fields
@@ -69,7 +86,7 @@ class TestResourceFields(TestCase):
         self.nike = Brand.objects.create(name='Nike', code='NK')
         self.ball = Product.objects.create(name='Nike Speed', code='NKSP01', color='Black and White', brand=self.nike)
 
-        response = self.client.get('/test_serenesiri/products/%s' % self.ball.id)
+        response = self.client.get('/products/%s' % self.ball.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(simplejson.loads(response.content), {
@@ -83,23 +100,23 @@ class TestResourceFields(TestCase):
                 'title': 'Nike',
                 'links': {
                     'self': {
-                        'href': 'http://testserver/test_serenesiri/brands/%s' % self.nike.id,
+                        'href': 'http://testserver/brands/%s' % self.nike.id,
                         'rel': 'self',
                         'title': 'Nike',
-                    }
+                        }
                 }
             },
             'links': {
                 'self': {
-                    'href': 'http://testserver/test_serenesiri/products/%s' % self.ball.id,
+                    'href': 'http://testserver/products/%s' % self.ball.id,
                     'rel': 'self',
                     'title': 'Nike Speed',
-                },
+                    },
                 'brand': {
-                    'href': 'http://testserver/test_serenesiri/brands/%s' % self.nike.id,
+                    'href': 'http://testserver/brands/%s' % self.nike.id,
                     'rel': 'brand',
                     'title': 'Nike',
-                }
+                    }
             }
         })
 
@@ -109,7 +126,7 @@ class TestResourceFields(TestCase):
         self.nike = Brand.objects.create(name='Nike', code='NK')
         self.ball = Product.objects.create(name='Nike Speed', code='NKSP01', color='Black and White', brand=self.nike)
 
-        response = self.client.get('/test_serenesiri/products/%s' % self.ball.id)
+        response = self.client.get('/products/%s' % self.ball.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(simplejson.loads(response.content), {
@@ -117,7 +134,7 @@ class TestResourceFields(TestCase):
             'code': 'NKSP01',
             'color': 'Black and White',
             'last_modified': self.ball.last_modified.isoformat(),
-        })
+            })
 
     def test_fields_with_links(self):
         ProductResource.fields = ('name', 'code', 'color', 'last_modified', 'links')
@@ -125,7 +142,7 @@ class TestResourceFields(TestCase):
         self.nike = Brand.objects.create(name='Nike', code='NK')
         self.ball = Product.objects.create(name='Nike Speed', code='NKSP01', color='Black and White', brand=self.nike)
 
-        response = self.client.get('/test_serenesiri/products/%s' % self.ball.id)
+        response = self.client.get('/products/%s' % self.ball.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(simplejson.loads(response.content), {
@@ -135,15 +152,15 @@ class TestResourceFields(TestCase):
             'last_modified': self.ball.last_modified.isoformat(),
             'links': {
                 'self': {
-                    'href': 'http://testserver/test_serenesiri/products/%s' % self.ball.id,
+                    'href': 'http://testserver/products/%s' % self.ball.id,
                     'rel': 'self',
                     'title': 'Nike Speed',
-                },
+                    },
                 'brand': {
-                    'href': 'http://testserver/test_serenesiri/brands/%s' % self.nike.id,
+                    'href': 'http://testserver/brands/%s' % self.nike.id,
                     'rel': 'brand',
                     'title': 'Nike',
-                }
+                    }
             }
         })
 
@@ -153,7 +170,7 @@ class TestResourceFields(TestCase):
         self.nike = Brand.objects.create(name='Nike', code='NK')
         self.ball = Product.objects.create(name='Nike Speed', code='NKSP01', color='Black and White', brand=self.nike)
 
-        response = self.client.get('/test_serenesiri/products/%s' % self.ball.id)
+        response = self.client.get('/products/%s' % self.ball.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(simplejson.loads(response.content), {
@@ -166,7 +183,7 @@ class TestResourceFields(TestCase):
                 'title': 'Nike',
                 'links': {
                     'self': {
-                        'href': 'http://testserver/test_serenesiri/brands/%s' % self.nike.id,
+                        'href': 'http://testserver/brands/%s' % self.nike.id,
                         'rel': 'self',
                         'title': 'Nike',
                         }
@@ -180,7 +197,7 @@ class TestResourceFields(TestCase):
         self.nike = Brand.objects.create(name='Nike', code='NK')
         self.ball = Product.objects.create(name='Nike Speed', code='NKSP01', color='Black and White', brand=self.nike)
 
-        response = self.client.get('/test_serenesiri/products/%s' % self.ball.id)
+        response = self.client.get('/products/%s' % self.ball.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(simplejson.loads(response.content), {
@@ -190,10 +207,10 @@ class TestResourceFields(TestCase):
             'last_modified': self.ball.last_modified.isoformat(),
             'links': {
                 'self': {
-                    'href': 'http://testserver/test_serenesiri/products/%s' % self.ball.id,
+                    'href': 'http://testserver/products/%s' % self.ball.id,
                     'rel': 'self',
                     'title': 'Nike Speed',
-                }
+                    }
             }
         })
 
@@ -203,7 +220,7 @@ class TestResourceFields(TestCase):
         self.nike = Brand.objects.create(name='Nike', code='NK')
         self.ball = Product.objects.create(name='Nike Speed', code='NKSP01', color='Black and White', brand=self.nike)
 
-        response = self.client.get('/test_serenesiri/products/%s' % self.ball.id)
+        response = self.client.get('/products/%s' % self.ball.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(simplejson.loads(response.content), {
@@ -216,12 +233,12 @@ class TestResourceFields(TestCase):
                 'title': 'Nike',
                 'links': {
                     'self': {
-                        'href': 'http://testserver/test_serenesiri/brands/%s' % self.nike.id,
+                        'href': 'http://testserver/brands/%s' % self.nike.id,
                         'rel': 'self',
                         'title': 'Nike',
-                    }
+                        }
                 },
                 'name': 'Nike',
                 'code': 'NK',
-            },
-        })
+                },
+            })
