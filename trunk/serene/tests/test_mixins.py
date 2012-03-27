@@ -1,3 +1,6 @@
+from datetime import datetime
+import time
+
 from django.conf import settings
 from django.test.client import RequestFactory
 from django.utils import simplejson as json
@@ -6,11 +9,13 @@ from django.utils.unittest.case import TestCase
 from djangorestframework.response import ErrorResponse
 from djangorestframework.tests.testcases import SettingsTestCase
 from djangorestframework.views import View
+
+from serene import mixins
 from serene.mixins import ReadModelMixin, UpdateModelMixin, UpdateOrCreateModelMixin, CreateModelMixin, PaginatorMixin
 from serene.resources import ModelResource
-from serene.tests.models import DummyModel
+from serene.tests.datetimestub import DatetimeStub
+from serene.tests.models import DummyModel, DummierModel
 
-import time
 
 class TestMixinsBase(SettingsTestCase):
     def setUp(self):
@@ -20,6 +25,15 @@ class TestMixinsBase(SettingsTestCase):
         self.req = RequestFactory()
 
 class TestReadMixin(TestMixinsBase):
+
+    def setUp(self):
+        super(TestReadMixin, self).setUp()
+        mixins.datetime = DatetimeStub()
+        mixins.datetime.now = lambda: datetime(2012, 12, 12, 6, 6, 6)
+
+    def tearDown(self):
+        mixins.datetime = datetime
+        super(TestReadMixin, self).tearDown()
 
     def test_read_model_mixin_must_return_last_modified_header(self):
         dummy = DummyModel.objects.create(name='my dum dum')
@@ -38,6 +52,24 @@ class TestReadMixin(TestMixinsBase):
         # no error should occur, meaning we have the right format
         last_modified_datetime = parse_http_date(last_modified)
         self.assertEqual(last_modified_datetime, time.mktime(dummy.last_modified.timetuple()))
+
+    def test_read_model_mixin_must_return_last_modified_header_as_now(self):
+        dummier = DummierModel.objects.create(name='my dummier')
+
+        class DummierResource(ModelResource):
+            model = DummierModel
+
+        request = self.req.get('/dummiers')
+        mixin = ReadModelMixin()
+        mixin.resource = DummierResource
+
+        response = mixin.get(request, dummier.id)
+        self.assertEquals(dummier.name, response.cleaned_content.name)
+        self.assertTrue(response.headers.has_key('Last-Modified'))
+        last_modified = response.headers['Last-Modified']
+        # no error should occur, meaning we have the right format
+        last_modified_datetime = parse_http_date(last_modified)
+        self.assertEqual(last_modified_datetime, time.mktime(datetime(2012, 12, 12, 6, 6, 6).timetuple()))
 
 class TestUpdateModelMixin(TestMixinsBase):
 
@@ -286,3 +318,37 @@ class TestPaginatorMixin(TestCase):
         #assert last
         self.assertTrue(links.has_key('last'))
         self._assert_links(links, 'last', 'http://testserver/paginator')
+
+    def test_paginator_mixin_return_nav_info_with_limit(self):
+        """
+        Paginator mixin should return navigation links including
+        self, first, last, next, previous when applicable
+        - Links should include 'limit' parameter if different from default
+        """
+        request = self.req.get('/paginator?page=3&limit=10')
+        response = MockPaginatorView.as_view(limit=20)(request)
+        content = json.loads(response.content)
+
+        self._assert_page_info(content, 6, 3, 60, 10)
+        self.assertTrue(content.has_key('links'))
+        links = content['links']
+
+        #assert self
+        self.assertTrue(links.has_key('self'))
+        self._assert_links(links, 'self', 'http://testserver/paginator?page=3&limit=10')
+
+        #assert no next
+        self.assertTrue(links.has_key('next'))
+        self._assert_links(links, 'next', 'http://testserver/paginator?page=4&limit=10')
+
+        #assert prev
+        self.assertTrue(links.has_key('previous'))
+        self._assert_links(links, 'previous', 'http://testserver/paginator?page=2&limit=10')
+
+        #assert first
+        self.assertTrue(links.has_key('first'))
+        self._assert_links(links, 'first','http://testserver/paginator?limit=10')
+
+        #assert last
+        self.assertTrue(links.has_key('last'))
+        self._assert_links(links, 'last', 'http://testserver/paginator?page=6&limit=10')
