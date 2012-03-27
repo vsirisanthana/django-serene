@@ -1,5 +1,6 @@
 from django.db import models
 from djangorestframework.resources import ModelResource as DrfModelResource
+from djangorestframework.serializer import _SkipField
 from serene.serializers import RelatedSerializer
 
 
@@ -32,7 +33,10 @@ class ModelResource(DrfModelResource):
                     }
                 except (AttributeError, NotImplementedError):
                     pass
-        return links
+        if links:
+            return links
+        else:
+            raise _SkipField
 
     def url(self, instance):
         return instance.get_absolute_url()
