@@ -1,5 +1,5 @@
 from serene.resources import ModelResource
-from test_serenesiri.models import Brand, Product
+from serene.tests.models import Brand, Product
 
 class BrandResource(ModelResource):
     model = Brand

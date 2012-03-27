@@ -129,8 +129,6 @@ INSTALLED_APPS = (
     'djangorestframework',
 
     'serene',
-
-    'test_serenesiri',
 )
 
 # A sample logging configuration. The only tangible logging
