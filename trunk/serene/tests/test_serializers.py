@@ -120,6 +120,46 @@ class TestFieldNesting(TestCase):
         self.assertEqual(SerializerM3().serialize(self.m3), {'field': {'field2': u'bar'}})
 
 
+    def test_include_tuple_nesting(self):
+        """
+        Test tuple nesting on `include` attr
+        """
+        class SerializerM2(Serializer):
+            exclude = ('id', 'field')
+            include = ('field_x', ('field_y', ('field1',)))
+
+            def field_x(self, instance):
+                return '%s %s' % (instance.field.field1, instance.field.field2)
+
+            def field_y(self, instance):
+                return instance.field
+
+        class SerializerM3(Serializer):
+            exclude = ('id', 'field')
+            include = ('field_x', ('field_y', ('field1',)))
+
+            def field_x(self, instance):
+                return '%s %s' % (instance.field.field1, instance.field.field2)
+
+            def field_y(self, instance):
+                return instance.field
+
+        self.assertEqual(SerializerM2().serialize(self.m2), {
+            'last_modified': None,
+            'field_x': u'foo bar',
+            'field_y': {
+                'field1': u'foo',
+            },
+        })
+        self.assertEqual(SerializerM3().serialize(self.m3), {
+            'last_modified': None,
+            'field_x': u'foo bar',
+            'field_y': {
+                'field1': u'foo',
+            },
+        })
+
+
     def test_serializer_class_nesting(self):
         """
         Test related model serialization
