@@ -20,6 +20,10 @@ to use django-serene simply just do::
 ====================
      CHANGE LOG
 ====================
+Version 0.0.7
+--------------------
+- Change UpdateOrCreateModelMixin to always return Response object
+
 Version 0.0.6
 --------------------
 - Able to specify sub-fields in 'include' attribute of Serializer/Resource
