@@ -44,16 +44,16 @@ class UpdateOrCreateModelMixin(DrfModelMixin):
     """
     def put(self, request, *args, **kwargs):
         model = self.resource.model
+        return_status = status.HTTP_200_OK
         try:
             self.model_instance = self.get_instance(*args, **kwargs)
             for (key, val) in self.CONTENT.items():
                 setattr(self.model_instance, key, val)
         except model.DoesNotExist:
             self.model_instance = model(**self.get_instance_data(model, self.CONTENT, *args, **kwargs))
-            self.model_instance.save()
-            return Response(status.HTTP_201_CREATED, self.model_instance)
+            return_status = status.HTTP_201_CREATED
         self.model_instance.save()
-        return self.model_instance
+        return Response(return_status, self.model_instance)
 
 
 class CreateModelMixin(DrfCreateModelMixin):
