@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name = "django-serene",
-    version = "0.0.6",
+    version = "0.0.7",
     author = "The Sirisanthana Team",
     author_email = "vsirisanthana@gmail.com",
     url = "http://code.google.com/p/django-serene/",

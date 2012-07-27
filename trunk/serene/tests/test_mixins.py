@@ -140,12 +140,13 @@ class TestUpdateOrCreateModelMixin(TestMixinsBase):
         response = self.mixin.put(request, id=dummy.id)
 
         self.assertEqual(dummy.name, 'dummy1')
-        self.assertEqual(response.name, 'updated_name')
-        self.assertEqual(response.id, dummy.id)
+        content = response.raw_content
+        self.assertEqual(content.name, 'updated_name')
+        self.assertEqual(content.id, dummy.id)
 
         #get dummy again now it should have the new name
         dummy = DummyModel.objects.get(id=dummy.id)
-        self.assertEqual(dummy.name, response.name)
+        self.assertEqual(dummy.name, content.name)
 
     def test_creation_on_put_not_exist_model(self):
         """
