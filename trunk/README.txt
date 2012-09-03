@@ -20,6 +20,10 @@ to use django-serene simply just do::
 ====================
      CHANGE LOG
 ====================
+Version 0.0.8
+--------------------
+- Make sure django-serene uses djangorestframework==0.3.3
+
 Version 0.0.7
 --------------------
 - Change UpdateOrCreateModelMixin to always return Response object
