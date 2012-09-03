@@ -24,5 +24,5 @@ setup(
     license = "GPL-3.0",
     keywords = "RESTful django djangorestframework",
     packages = ['serene', 'serene.tests'],
-    install_requires = ['djangorestframework'],
+    install_requires = ['djangorestframework==0.3.3'],
 )
