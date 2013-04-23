@@ -363,3 +363,21 @@ class TestRelatedSerializer(TestCase):
                 }
             }
         })
+
+    def test_serialize_related_dict_has_links_already(self):
+        """
+        Test serializing related dict that already has links in it
+        """
+        class SerializerDict(Serializer):
+            fields = ('links',)
+            related_serializer = RelatedSerializer
+
+        instance_with_links = {
+            'links': {
+                'self': {
+                    'href': 'http://testserver/m1'
+                }
+            }
+        }
+
+        self.assertEqual(SerializerDict().serialize(instance_with_links), instance_with_links)
