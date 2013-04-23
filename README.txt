@@ -20,6 +20,10 @@ to use django-serene simply just do::
 ====================
      CHANGE LOG
 ====================
+Version 0.0.9
+--------------------
+- Update links function to support instance that is a dict and already has 'links'
+
 Version 0.0.8
 --------------------
 - Make sure django-serene uses djangorestframework==0.3.3
