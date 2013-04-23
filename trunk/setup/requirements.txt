@@ -1,5 +1,5 @@
 coverage
 django
-djangorestframework
+djangorestframework==0.3.3
 django-nose
 yolk

@@ -8,13 +8,17 @@ from djangorestframework.serializer import Serializer, _SkipField, _fields_to_di
 # Necessary because OnTheFlySerializer is based on djangorestframework Serializer.
 def links(self, instance):
     try:
-        return {
-            'self': {
-                'href': instance.get_absolute_url(),
-                'rel': 'self',
-                'title': unicode(instance),
+        if isinstance(instance, dict) and instance.get('links'):
+            # links already exists
+            return instance['links']
+        else:
+            return {
+                'self': {
+                    'href': instance.get_absolute_url(),
+                    'rel': 'self',
+                    'title': unicode(instance),
+                }
             }
-        }
     except (AttributeError, NotImplementedError):
         raise _SkipField
 Serializer.links = links
